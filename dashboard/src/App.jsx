@@ -9,11 +9,6 @@ import {
   Wifi, 
   WifiOff,
   Hexagon,
-  Settings,
-  Volume2,
-  VolumeX,
-  Power,
-  Sliders,
   Clock
 } from 'lucide-react';
 
@@ -26,12 +21,6 @@ function App() {
     akustik: 0,
     fan_durum: false,
     son_gorulme: 0
-  });
-
-  const [kontrol, setKontrol] = useState({
-    otonom: 1,
-    fan: 0,
-    buzzer: 0
   });
 
   const [now, setNow] = useState(Date.now());
@@ -60,46 +49,10 @@ function App() {
       }
     });
 
-    // Control panel listener
-    const kontrolRef = ref(database, 'kovan1/kontrol');
-    const unsubscribeKontrol = onValue(kontrolRef, (snapshot) => {
-      const val = snapshot.val();
-      if (val) {
-        setKontrol({
-          otonom: val.otonom !== undefined ? val.otonom : 1,
-          fan: val.fan !== undefined ? val.fan : 0,
-          buzzer: val.buzzer !== undefined ? val.buzzer : 0
-        });
-      }
-    });
-
     return () => {
       unsubscribeData();
-      unsubscribeKontrol();
     };
   }, []);
-
-  const updateKontrol = async (newKontrol) => {
-    const updated = { ...kontrol, ...newKontrol };
-    setKontrol(updated); // Arayüzü anında güncelle (Optimistic UI)
-    
-    // Modern fetch() API ile PATCH metodu kullanarak veriyi güncelle
-    try {
-      await fetch('https://beevoice-35c4b-default-rtdb.europe-west1.firebasedatabase.app/kovan1/kontrol.json?auth=t3czGPDuvrZlT7pOBB3LWoJXjW6zdGl4LuLShlmT', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(newKontrol)
-      });
-    } catch (error) {
-      console.error('Firebase Güncelleme Hatası:', error);
-    }
-  };
-
-  // Calculate Akustik Percentage (0-1023 to 0-100%)
-  const akustikPercent = Math.min(100, Math.max(0, (data.akustik / 1023) * 100));
-  const isAkustikHigh = akustikPercent > 60;
 
   // Real Connection Status based on timestamp from Arduino
   const isConnected = data.son_gorulme > 0 && (now - data.son_gorulme < 15000); // 15 seconds slack
@@ -276,77 +229,7 @@ function App() {
           )}
         </div>
 
-        {/* Cihaz Kontrol Paneli */}
-        <div className="glass-panel p-6 md:p-8">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-indigo-500/20 rounded-xl">
-              <Settings className="w-6 h-6 text-indigo-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white">Sistem Kontrolü</h2>
-              <p className="text-sm text-slate-400">Manuel donanım yönetimi</p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Otonom Toggle */}
-            <div className="bg-slate-900/50 p-5 rounded-2xl border border-slate-700 flex flex-col justify-between hover:bg-slate-800/50 transition-colors">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-slate-300 font-medium">Otonom Mod</span>
-                <button 
-                  onClick={() => updateKontrol({ otonom: kontrol.otonom === 1 ? 0 : 1 })}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${kontrol.otonom === 1 ? 'bg-indigo-500' : 'bg-slate-600'}`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${kontrol.otonom === 1 ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Açık olduğunda sistem sıcaklığa ve sese göre fanı ve buzzer'ı kendisi otomatik olarak yönetir.
-              </p>
-            </div>
-
-            {/* Fan Speed */}
-            <div className={`bg-slate-900/50 p-5 rounded-2xl border border-slate-700 flex flex-col justify-between transition-all duration-300 ${kontrol.otonom === 1 ? 'opacity-40 pointer-events-none' : 'hover:bg-slate-800/50'}`}>
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-slate-300 font-medium flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-teal-400" /> Fan Hızı
-                </span>
-                <span className="text-teal-400 font-bold bg-teal-500/10 px-2 py-1 rounded-lg text-sm">
-                  {Math.round((kontrol.fan / 255) * 100)}%
-                </span>
-              </div>
-              <input 
-                type="range" 
-                min="0" 
-                max="255" 
-                value={kontrol.fan}
-                onChange={(e) => updateKontrol({ fan: parseInt(e.target.value) })}
-                className="w-full accent-teal-500 cursor-pointer h-2 bg-slate-700 rounded-lg appearance-none"
-              />
-              <p className="text-xs text-slate-500 mt-4">Fanın çalışma hızını (PWM) ayarlar.</p>
-            </div>
-
-            {/* Buzzer */}
-            <div className={`bg-slate-900/50 p-5 rounded-2xl border border-slate-700 flex flex-col justify-between transition-all duration-300 ${kontrol.otonom === 1 ? 'opacity-40 pointer-events-none' : 'hover:bg-slate-800/50'}`}>
-               <div className="flex justify-between items-center mb-4">
-                <span className="text-slate-300 font-medium flex items-center gap-2">
-                  {kontrol.buzzer === 1 ? <Volume2 className="w-4 h-4 text-rose-400" /> : <VolumeX className="w-4 h-4 text-slate-400" />} Buzzer Alarmı
-                </span>
-                <button 
-                  onClick={() => updateKontrol({ buzzer: kontrol.buzzer === 1 ? 0 : 1 })}
-                  className={`p-2 rounded-lg transition-all focus:outline-none ${kontrol.buzzer === 1 ? 'bg-rose-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.4)]' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'}`}
-                >
-                  <Power className="w-5 h-5" />
-                </button>
-              </div>
-              <p className="text-xs text-slate-500 mt-auto leading-relaxed">
-                Manuel olarak kovan içi uyarı sesini (Buzzer) açıp kapatmanızı sağlar.
-              </p>
-            </div>
-
-          </div>
-        </div>
 
       </div>
     </div>
