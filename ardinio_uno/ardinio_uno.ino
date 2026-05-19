@@ -57,7 +57,7 @@ void firebaseGonder(float t, float h, float k, int r, int s, bool fan) {
     return; 
   }
   
-  String data = "{\"sicaklik\":" + String(t) + ",\"nem\":" + String(h) + ",\"kilo\":" + String(k) + ",\"rpm\":" + String(r) + ",\"akustik\":" + String(s) + ",\"fan_durum\":" + (fan ? String("true") : String("false")) + "}";
+  String data = "{\"sicaklik\":" + String(t) + ",\"nem\":" + String(h) + ",\"kilo\":" + String(k) + ",\"rpm\":" + String(r) + ",\"akustik\":" + String(s) + ",\"fan_durum\":" + (fan ? String("true") : String("false")) + ",\"son_guncelleme\":{\".sv\":\"timestamp\"}}";
   String req = "PUT /kovan1/anlik.json?auth=" DATABASE_SECRET " HTTP/1.1\r\nHost: " DATABASE_HOST "\r\nConnection: close\r\nContent-Type: application/json\r\nContent-Length: ";
   req += String(data.length()) + "\r\n\r\n" + data;
 
